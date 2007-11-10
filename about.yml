@@ -1,0 +1,6 @@
+author: brianmario
+summary: Dynamically includes JS and/or CSS files based on controller/action name, if such files exist at either of those paths
+homepage: http://sharpercoding.com
+plugin: https://svn.sharpercoding.com/repos/rails/plugins/dynamic_asset_helper/
+version: 0.1
+rails_version: 1.2+

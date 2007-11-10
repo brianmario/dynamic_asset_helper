@@ -1,0 +1,25 @@
+Dynamic Asset Helper
+
+This plugin allows for dynamic inclusion of javascript and css assets based on basic routes.
+
+For example, the path {:controller => 'products', :action => 'list'} might have custom
+JS or CSS files specifically for use by that view. This plugin aims to make that easier.
+
+By placing <%= dynamic_stylesheet_link_tag %> and/or <%= dynamic_javascript_include_tag %>
+in your view, this plugin will look for files at the following paths
+(given the example path above)
+'/stylesheets/products.css', '/stylesheets/products/list.css'
+'/javascripts/products.js', '/javascripts/products/list.js'
+A <script> and/or <link> tag will be generated for each file that exists.
+
+This can be especially helpful since no tags will be output if no css or js file exists
+to be included. Think of it as a way to override or add on to the global look and feel of your
+site, for a specific path.
+
+I realize this plugin may not have performance in mind, since it's doing File.exists? checks
+upon every page load. So please keep in mind this is intended for a small audience who needs it
+and should probably only be used to speed up development.
+
+Although, I hear word that rails 2.0 may include functionality to automagically combine a cached
+version of all assets of the same time from a path tree like this plugin is doing.
+I guess time will tell...
