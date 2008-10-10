@@ -6,111 +6,49 @@
 # @author     Brian Lopez <brianmario [at] me.com>
 # @copyright  Author
 module DynamicAssetHelper
-  def dynamic_javascript_include_tag(options={})
-    output = []
-    if options[:extras]
-      extras = options[:extras]
-      options.reject! {|k, v| k == :extras}
-    end
-    output << controller_javascript_include_tag(options) unless controller_javascript_include_tag(options).nil?
-    output << action_javascript_include_tag(options) unless action_javascript_include_tag(options).nil?
-    output << other_javascript_include_tags(options, extras) unless extras.nil?
-    output.join("\n")
-  end
+  DYNAMIC_DIR = "dynamic"
   
-  def dynamic_stylesheet_link_tag(options={})
-    output = []
-    if options[:extras]
-      extras = options[:extras]
-      options.reject! {|k, v| k == :extras}
-    end
-    output << controller_stylesheet_link_tag(options) unless controller_stylesheet_link_tag(options).nil?
-    output << action_stylesheet_link_tag(options) unless action_stylesheet_link_tag(options).nil?
-    output << other_stylesheet_link_tags(options, extras) unless extras.nil?
-    output.join("\n")
-  end
-  
-  protected
-  
-  def controller_javascript_include_tag(options)
-    if File.exists?(File.join(Rails.root, 'public', 'javascripts', params[:controller]+'.js'))
-      path = "#{params[:controller]}"
-      path << "_#{options[:media]}" unless options[:media].nil?
-      javascript_include_tag("#{path}.js", options)
+  def dynamic_javascript_include_tag
+    dynamic_asset_tag do |file|
+      dynamic_include_js_file(file)
     end
   end
   
-  def action_javascript_include_tag(options)
-    if File.exists?(File.join(Rails.root, 'public', 'javascripts', params[:controller], params[:action]+'.js'))
-      path = "#{params[:controller]}/#{params[:action]}"
-      path << "_#{options[:media]}" unless options[:media].nil?
-      javascript_include_tag("#{path}.js", options)
+  def dynamic_stylesheet_link_tag
+    dynamic_asset_tag do |file|
+      dynamic_include_css_files(file)
     end
   end
   
-  def other_javascript_include_tags(options, extras)
-    unless extras.nil?
-      output = []
-      extras.each do |extra|
-        
-        fs_path = File.join(Rails.root, 'public', 'javascripts', params[:controller], params[:action], extra.to_s.pluralize+'.js')
-        if File.exists?(fs_path)
-          path = "#{params[:controller]}/#{params[:action]}/#{extra.to_s.pluralize}"
-          path << "_#{options[:media]}" unless options[:media].nil?
-          output << javascript_include_tag("#{path}.js", options)
-        end
-        
-        if params[extra]
-          fs_path = File.join(Rails.root, 'public', 'javascripts', params[:controller], params[:action], extra.to_s.pluralize, params[extra]+'.js')
-          if File.exists?(fs_path)
-            path = "#{params[:controller]}/#{params[:action]}/#{extra.to_s.pluralize}/#{params[extra]}"
-            path << "_#{options[:media]}" unless options[:media].nil?
-            output << javascript_include_tag("#{path}.js", options)
-          end
-        end
-      end
-      output.join("\n")
-    end
+  def dynamic_asset_tag
+    layout = @controller.active_layout
+    
+    file_includes = [ File.join(DYNAMIC_DIR, layout),
+                      File.join(DYNAMIC_DIR, params[:controller]),
+                      File.join(DYNAMIC_DIR, params[:controller], params[:action]) ]
+    file_includes.map! {|x| yield(x)}
+    file_includes.flatten!
+    file_includes.join("\n")
   end
   
-  def controller_stylesheet_link_tag(options)
-    if File.exists?(File.join(Rails.root, 'public', 'stylesheets', params[:controller]+'.css'))
-      path = "#{params[:controller]}"
-      path << "_#{options[:media]}" unless options[:media].nil?
-      stylesheet_link_tag("#{path}.css", options)
+  def dynamic_include_js_file(file)
+    return_files = []
+    file_with_type = file + ".js"
+    if File.exists?(File.join(ActionView::Helpers::AssetTagHelper::JAVASCRIPTS_DIR, file_with_type))
+      return_files << javascript_include_tag(file_with_type)
     end
+    return_files
   end
 
-  def action_stylesheet_link_tag(options)
-    if File.exists?(File.join(Rails.root, 'public', 'stylesheets', params[:controller], params[:action]+'.css'))
-      path = "#{params[:controller]}/#{params[:action]}"
-      path << "_#{options[:media]}" unless options[:media].nil?
-      stylesheet_link_tag("#{path}.css", options)
-    end
-  end
-  
-  def other_stylesheet_link_tags(options, extras)
-    unless extras.nil?
-      output = []
-      extras.each do |extra|
-        
-        fs_path = File.join(Rails.root, 'public', 'stylesheets', params[:controller], params[:action], extra.to_s.pluralize+'.css')
-        if File.exists?(fs_path)
-          path = "#{params[:controller]}/#{params[:action]}/#{extra.to_s.pluralize}"
-          path << "_#{options[:media]}" unless options[:media].nil?
-          output << stylesheet_link_tag("#{path}.css", options)
-        end
-        
-        if params[extra]
-          fs_path = File.join(Rails.root, 'public', 'stylesheets', params[:controller], params[:action], extra.to_s.pluralize, params[extra]+'.css')
-          if File.exists?(fs_path)
-            path = "#{params[:controller]}/#{params[:action]}/#{extra.to_s.pluralize}/#{params[extra]}"
-            path << "_#{options[:media]}" unless options[:media].nil?
-            output << stylesheet_link_tag("#{path}.css", options)
-          end
-        end
+  def dynamic_include_css_files(file)
+    return_files = []
+    media_types = [["", "all"], ["_screen", "screen"], ["_print", "print"]]
+    media_types.each do |m|
+      file_with_type = file + m[0] + ".css"
+      if File.exists?(File.join(ActionView::Helpers::AssetTagHelper::STYLESHEETS_DIR, file_with_type))
+        return_files << stylesheet_link_tag(file_with_type, :media => m[1])
       end
-      output.join("\n")
     end
+    return_files
   end
 end
